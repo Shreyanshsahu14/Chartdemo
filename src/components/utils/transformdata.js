@@ -1,43 +1,34 @@
-export const transformData = (option, data) => {
-    if (!option || !data.length) return { labels: [], datasets: [] };
-  
-    const valueCounts = {};
-  
-    data.forEach((item) => {
-      const keyValue = item[option];
-  
-      if (Array.isArray(keyValue)) {
-        keyValue.forEach((element) => {
-          const value = element[`${option.slice(0, -1)}Name`] || element;
-          valueCounts[value] = (valueCounts[value] || 0) + 1;
-        });
-      } else if (typeof keyValue === "string") {
-        valueCounts[keyValue] = (valueCounts[keyValue] || 0) + 1;
-      } else if (typeof keyValue === "number") {
-        valueCounts["Total"] = (valueCounts["Total"] || 0) + keyValue;
-      }
-    });
-  
-    const labels = Object.keys(valueCounts);
-    const datasetValues = Object.values(valueCounts);
-  
-    return {
-      labels,
-      datasets: [
-        {
-          label: `Distribution by ${option}`,
-          data: datasetValues,
-          backgroundColor: [
-            "#FF6384",
-            "#36A2EB",
-            "#FFCE56",
-            "#4BC0C0",
-            "#9966FF",
-            "#FF9F40",
-            "#FF8A80",
-            "#A1887F",
-          ],
-        },
-      ],
-    };
+export const transformData = (field, data, fieldMap) => {
+  if (!field || !data?.length) return { labels: [], datasets: [] };
+
+  const counts = {};
+  const nestedField = fieldMap?.[field];
+
+  data.forEach(item => {
+    const value = item[field];
+    
+    if (Array.isArray(value)) {
+      value.forEach(el => {
+        const key = nestedField ? el[nestedField] : el;
+        counts[key] = (counts[key] || 0) + 1;
+      });
+    } else if (typeof value === 'object') {
+      const key = nestedField ? value[nestedField] : JSON.stringify(value);
+      counts[key] = (counts[key] || 0) + 1;
+    } else {
+      counts[value] = (counts[value] || 0) + 1;
+    }
+  });
+
+  return {
+    labels: Object.keys(counts),
+    datasets: [{
+      label: `Distribution by ${field}`,
+      data: Object.values(counts),
+      backgroundColor: [
+        '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
+        '#9966FF', '#FF9F40', '#FF8A80', '#A1887F'
+      ]
+    }]
   };
+};
