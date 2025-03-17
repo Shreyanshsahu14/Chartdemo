@@ -22,7 +22,7 @@ const PieChart = ({ ChartData }) => {
     labels,
     datasets: [{
       ...dataset,
-      backgroundColor: generateRandomColors(dataset.data?.length || 3),
+      backgroundColor: dataset.backgroundColor || generateRandomColors(dataset.data?.length || 3),
       hoverOffset: 4
     }]
   };

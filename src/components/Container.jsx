@@ -19,7 +19,8 @@ const Container = ({
   title, 
   style,
   onEdit,
-  onDelete
+  onDelete,
+  dragHandle
 }) => {
   const renderContent = () => {
     switch(ChartType) {
@@ -55,7 +56,10 @@ const Container = ({
         alignItems: 'center',
         marginBottom: 16
       }}>
-        <h2 style={{ margin: 0, color: '#2c3e50' }}>{title}</h2>
+        <div style={{display:'flex',alignItems:'center',gap:8}}>
+          {dragHandle}
+          <h2 style={{margin:0,color:'#2c3e50'}}>{title}</h2>
+        </div>
         <DropdownWithDialog 
           onEdit={onEdit} 
           onDelete={onDelete}

@@ -12,14 +12,24 @@ import { FaChartBar } from "react-icons/fa";
 import { BiSolidDoughnutChart } from "react-icons/bi";
 import { MdGridOn } from "react-icons/md";
 import { FaTableList } from "react-icons/fa6";
-import { 
-  PieChart as PieIcon, 
-  BarChart as BarIcon,
-  ShowChart as LineIcon,
-  DonutLarge as DoughnutIcon,
-  GridOn as GridIcon,
-  TableChart as TableIcon
-} from '@mui/icons-material';
+// import { 
+//   PieChart as PieIcon, 
+//   BarChart as BarIcon,
+//   ShowChart as LineIcon,
+//   DonutLarge as DoughnutIcon,
+//   GridOn as GridIcon,
+//   TableChart as TableIcon
+// } from '@mui/icons-material';
+import { DndContext,closestCenter } from "@dnd-kit/core";
+import{
+ SortableContext,
+ verticalListSortingStrategy,
+ useSortable,
+ arrayMove
+}  from '@dnd-kit/sortable';
+import {CSS} from '@dnd-kit/utilities';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+
 import { Grid, IconButton } from '@mui/material';
 import {
   FormControl,
@@ -27,6 +37,35 @@ import {
   Select,
   MenuItem,
 } from '@mui/material';
+import zIndex from "@mui/material/styles/zIndex";
+
+const SortableItem=({id,children})=>{
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+      isDragging
+    }=useSortable({id});
+
+    const style={
+      transform:CSS.Transform.toString(transform),
+      transition,
+      opacity:isDragging?0.5:1,
+      zIndex:isDragging? 1:0
+    };
+
+    return (
+<div ref={setNodeRef} style={style}>
+{children}
+</div>
+    );
+}
+
+
+
+
 
 const App = () => {
   const [charts, setCharts] = useState([]);
@@ -99,7 +138,16 @@ const App = () => {
     setShowAddModal(false);
     setEditChartId(null);
   };
-
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (active.id !== over.id) {
+      setCharts((charts) => {
+        const oldIndex = charts.findIndex(c => c.id === active.id);
+        const newIndex = charts.findIndex(c => c.id === over.id);
+        return arrayMove(charts, oldIndex, newIndex);
+      });
+    }
+  };
   return (
     <div style={{ padding: "20px" }}>
       <div style={{ marginBottom: 20, display: 'flex', gap: 20 }}>
@@ -269,10 +317,18 @@ const App = () => {
           </Button>
         </Box>
       </Modal>
-
+<DndContext 
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext 
+        items={charts}
+        strategy={verticalListSortingStrategy}
+      >
       {charts.map(chart => (
+         <SortableItem key={chart.id} id={chart.id}>
         <ChartContainer
-          key={chart.id}
+         // key={chart.id}
           chart={chart}
           datasets={datasets}
           fieldConfig={fieldConfig}
@@ -283,14 +339,28 @@ const App = () => {
           }}
           onDelete={() => setCharts(prev => prev.filter(c => c.id !== chart.id))}
         />
+          </SortableItem>
       ))}
+      </SortableContext>
+      </DndContext>
     </div>
   );
 };
 
 const ChartContainer = ({ chart, datasets, fieldConfig, onEdit, onDelete }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: chart.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
   const [chartData, setChartData] = useState({ labels: [], datasets: [] });
-
+ 
   useEffect(() => {
     const transformed = transformData(
       chart.dataType,
@@ -301,14 +371,21 @@ const ChartContainer = ({ chart, datasets, fieldConfig, onEdit, onDelete }) => {
   }, [chart, datasets]);
 
   return (
+    <div ref={setNodeRef} style={style}>
     <Container
       ChartType={chart.type}
       ChartData={chartData}
-      title={`${chart.dataSource} - ${chart.dataType}`}
+      title={`${chart.type.charAt(0).toUpperCase() + chart.type.slice(1)} Chart`} 
       style={{ width: chart.width }}
       onEdit={onEdit}
-      onDelete={onDelete}
+      onDelete={onDelete} 
+      dragHandle={
+        <div {...attributes} {...listeners} style={{cursor:'grab'}}>
+          <DragIndicatorIcon style={{color:'#666'}}/>
+        </div>
+      }
     />
+    </div>
   );
 };
 
